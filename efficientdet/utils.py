@@ -593,7 +593,8 @@ def set_precision_policy(policy_name: Text = None):
 
   assert policy_name in ('mixed_float16', 'mixed_bfloat16', 'float32')
   logging.info('use mixed precision policy name %s', policy_name)
-  tf.compat.v1.keras.layers.enable_v2_dtype_behavior()
+  # tf.compat.v1.keras.layers.enable_v2_dtype_behavior()
+  tf.compat.v1.keras.layers.enable_v2_dtype_behavior
   # mixed_float16 training is not supported for now, so disable loss_scale.
   # float32 and mixed_bfloat16 do not need loss scale for training.
   policy = tf2.keras.mixed_precision.Policy(policy_name)

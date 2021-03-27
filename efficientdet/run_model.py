@@ -32,7 +32,7 @@ from tensorflow.python.client import timeline  # pylint: disable=g-direct-tensor
 
 flags.DEFINE_string('model_name', 'efficientdet-d0', 'Model.')
 flags.DEFINE_string('logdir', '/tmp/deff/', 'log directory.')
-flags.DEFINE_string('runmode', 'dry', 'Run mode: {freeze, bm, dry}')
+flags.DEFINE_string('runmode', 'saved_model_infer', 'Run mode: {freeze, bm, dry}')
 flags.DEFINE_string('trace_filename', None, 'Trace file name.')
 
 flags.DEFINE_integer('threads', 0, 'Number of threads.')
@@ -50,8 +50,8 @@ flags.DEFINE_string(
     'hparams', '', 'Comma separated k=v pairs of hyperparameters or a module'
     ' containing attributes to use as hyperparameters.')
 
-flags.DEFINE_string('input_image', None, 'Input image path for inference.')
-flags.DEFINE_string('output_image_dir', None, 'Output dir for inference.')
+flags.DEFINE_string('input_image', 'test0.png', 'Input image path for inference.')
+flags.DEFINE_string('output_image_dir', 'serve_image_out', 'Output dir for inference.')
 
 # For video.
 flags.DEFINE_string('input_video', None, 'Input video path for inference.')
@@ -59,13 +59,13 @@ flags.DEFINE_string('output_video', None,
                     'Output video path. If None, play it online instead.')
 
 # For visualization.
-flags.DEFINE_integer('line_thickness', None, 'Line thickness for box.')
+flags.DEFINE_integer('line_thickness', 2, 'Line thickness for box.')
 flags.DEFINE_integer('max_boxes_to_draw', 100, 'Max number of boxes to draw.')
 flags.DEFINE_float('min_score_thresh', 0.4, 'Score threshold to show box.')
 flags.DEFINE_string('nms_method', 'hard', 'nms method, hard or gaussian.')
 
 # For saved model.
-flags.DEFINE_string('saved_model_dir', '/tmp/saved_model',
+flags.DEFINE_string('saved_model_dir', '/savedmodel',
                     'Folder path for saved model.')
 flags.DEFINE_string('tflite_path', None, 'Path for exporting tflite file.')
 
@@ -187,8 +187,6 @@ class ModelInspector(object):
         output_image_path = os.path.join(output_dir, img_id + '.jpg')
         Image.fromarray(img).save(output_image_path)
         print('writing file to %s' % output_image_path)
-    print(detections_bs.dtype)
-    np.save("filename.npy", detections_bs)
     return detections_bs
 
   def saved_model_benchmark(self,
@@ -257,8 +255,7 @@ class ModelInspector(object):
   def inference_single_image(self, image_image_path, output_dir, **kwargs):
     driver = inference.InferenceDriver(self.model_name, self.ckpt_path,
                                        self.model_config.as_dict())
-    a = driver.inference(image_image_path, output_dir, **kwargs)
-    return a
+    driver.inference(image_image_path, output_dir, **kwargs)
 
   def build_and_save_model(self):
     """build and save the model into self.logdir."""
@@ -466,7 +463,7 @@ class ModelInspector(object):
       if runmode == 'saved_model':
         self.export_saved_model(**config_dict)
       elif runmode == 'infer':
-        self.inference_single_image(kwargs['input_image'],
+        detect = self.inference_single_image(kwargs['input_image'],
                                     kwargs['output_image_dir'], **config_dict)
       elif runmode == 'saved_model_infer':
         # self.saved_model_inference(kwargs['input_image'],
@@ -487,10 +484,74 @@ class ModelInspector(object):
     return detect
 
 
-def main(_):
-  if tf.io.gfile.exists(FLAGS.logdir) and FLAGS.delete_logdir:
-    logging.info('Deleting log dir ...')
-    tf.io.gfile.rmtree(FLAGS.logdir)
+def run_self(input_img):
+    # model_name = 'efficientdet-d0'
+    # logdir = '/tmp/deff/'
+    # runmode = 'infer'
+    # trace_filename = None
+
+    # threads = int(0)
+    # bm_runs = int(1)
+    # tensorrt = None
+    # delete_logdir = True
+    # freeze = False
+    # use_xla = False
+    # batch_size = int(1)
+
+    # ckpt_path = None
+    # export_ckpt = None
+
+    # hparams = ''
+
+    # input_image = input_img
+    # output_image_dir = '/serve_image_out'
+
+    # # For video.
+    # input_video = None
+    # output_video = None
+
+    # # For visualization.
+    # line_thickness = float(0.35)
+    # max_boxes_to_draw = int(50)
+    # min_score_thresh = float(0.4)
+    # nms_method = 'hard'
+
+    # # For saved model.
+    # saved_model_dir = '/savedmodel'
+    # tflite_path = None
+
+
+    # inspector = ModelInspector(
+    #     model_name=model_name,
+    #     logdir=logdir,
+    #     tensorrt=tensorrt,
+    #     use_xla=use_xla,
+    #     ckpt_path=ckpt_path,
+    #     export_ckpt=export_ckpt,
+    #     saved_model_dir=saved_model_dir,
+    #     tflite_path=tflite_path,
+    #     batch_size=batch_size,
+    #     hparams=hparams,
+    #     score_thresh=min_score_thresh,
+    #     max_output_size=max_boxes_to_draw,
+    #     nms_method=nms_method)
+    # det = inspector.run_model(
+    #     runmode,
+    #     input_image=input_image,
+    #     output_image_dir=output_image_dir,
+    #     input_video=input_video,
+    #     output_video=output_video,
+    #     line_thickness=line_thickness,
+    #     max_boxes_to_draw=max_boxes_to_draw,
+    #     min_score_thresh=min_score_thresh,
+    #     nms_method=nms_method,
+    #     bm_runs=bm_runs,
+    #     threads=threads,
+    #     trace_filename=trace_filename)
+    # print(det)
+#   if tf.io.gfile.exists(FLAGS.logdir) and FLAGS.delete_logdir:
+#     logging.info('Deleting log dir ...')
+#     tf.io.gfile.rmtree(FLAGS.logdir)
 
   inspector = ModelInspector(
       model_name=FLAGS.model_name,
